@@ -6,7 +6,6 @@ Propriétaire : CAPRA Robotique - École de technologie supérieure
 
 Ce code est destiner au STM32F44RET6 du projet capteur.
 
-
 La logic du code est la suivente :
 
 lorsque le STM32 reçois une trame CAN dont le ID est 1A4,
@@ -18,19 +17,19 @@ l'utilisateur doit mettre la valeur 0x11 a l'octet dont correspond
 la données qu'il souhaite récupéré et 0x00 aux octet correspondant
 aux données non désirer :
 
-    Octet #0 : Méthane
-    Octet #1 : Co2
-    Octet #2 : Co
-    Octet #3 : Température
-    Octet #4 : Humidité
-    Octet #5 : Pression atmospérique
+    Octet #0 : Méthane ppm
+    Octet #1 : Co2 ppm
+    Octet #2 : Co ppm
+    Octet #3 : Température °C
+    Octet #4 : Humidité %
+    Octet #5 : Pression atmospérique kPa
 
 Exemple:    l'utilisateur veut le méthane et la température, donc le champ
             de donner de sa trame doit être {0x11, 0x00, 0x00, 0x11, 0x00, 0x00}
 
 Le STM32 répond de cette façon :
     Trame #1 :
-        ID : 1A5
+        ID : 0x1A5
         Octet #0 : Méthane LSB
         Octet #1 : Méthane MSB
         Octet #2 : Co2 LSB
@@ -41,8 +40,8 @@ Le STM32 répond de cette façon :
         Octet #7 : Humidité
 
     Trame #2
-        ID : 1A6
-        Octet 0# : Pression atmospérique
+        ID : 0x1A6
+        Octet #0 : Pression atmospérique
 
 La deuxième trame CAN sera envoyer uniquement si l'utilisateur demande a recevoir la pression atmosphérique.
 
@@ -50,6 +49,13 @@ Remarques :
 - Si l'utilisateur veut uniquement avoir certaine données, exemple le méthane et la température, les autres octets
   de la trame auront 0xFF comme valeur
 - La pression est exprimée en kilopascals (kPa),
+- Les données transmises sont envoyées en tant que "uint8_t" :
+  Exemple : le méthane est mesuré à 300 ppm  
+  Valeur en hexadécimal : 0x012C  
+  Encodée sur deux octets :
+     - Octet LSB (basse valeur) : 0x2C (44 en décimal)
+     - Octet MSB (haute valeur) : 0x01 (1 en décimal)
+  Trame CAN contiendra donc : [0x2C, 0x01] pour le méthane
 */
 
 // Librairies
