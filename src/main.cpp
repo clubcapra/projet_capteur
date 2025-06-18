@@ -70,6 +70,15 @@ Remarques :
 #include <cstdint>
 #include <iomanip>
 
+// Définition de la broche de la LED de statut
+#define LED_PIN PC12
+
+// Définition pour le MQ4 et le MQ7
+#define m -0.318
+#define b 1.133
+#define R0 5.5
+
+
 /*
  * Fonction : encoder_float_entier
  * But : Convertit un float en un uint8_t en gardant uniquement la partie entière
@@ -98,8 +107,29 @@ void encoder_uint16(uint16_t valeur, uint8_t *memoire, size_t &index)
     memoire[index++] = static_cast<uint8_t>(valeur & 0xFF); // octet bas (LSB)
 }
 
-// Définition de la broche de la LED de statut
-#define LED_PIN PC12
+/*
+ * Fonction : computePPM
+ * But : Calcule une concentration en ppm à partir d'une lecture brute du capteur analogique
+ * Paramètres :
+ *    - sensorValue : valeur analogique brute du capteur (généralement entre 0 et 1023)
+ * Retour :
+ *    - La concentration estimée en ppm sous forme d'un entier 16 bits non signé (uint16_t)
+ */
+uint16_t computePPM(float sensorValue)
+{
+  float voltage = sensorValue * (5.0 / 1023.0);
+  float RS_gas = ((5.0 * 1.0) / voltage) - 1.0;
+  float ratio = RS_gas / R0;
+  float ppm_log = (log10(ratio) - b) / m;
+  float ppm = pow(10, ppm_log);
+
+  if (ppm < 0.0)
+    return 0;
+  if (ppm > 65535.0)
+    return 65535;
+
+  return static_cast<uint16_t>(ppm + 0.5);
+}
 
 // Initialisation du bus I2C avec des broches spécifiques
 TwoWire myWire(PB7, PB6);
@@ -150,10 +180,10 @@ void setup()
     }
 
     // Ajustement de l’échelle de mesure des capteurs analogiques
-    MQ7->minScale = 30;
-    MQ7->maxScale = 3000;
-    SEN_094->minScale = 300;
-    SEN_094->maxScale = 10000;
+    MQ7->minScale = 0;
+    MQ7->maxScale = 4095;
+    SEN_094->minScale = 0;
+    SEN_094->maxScale = 4095;
 }
 
 void loop()
@@ -179,7 +209,7 @@ void loop()
                     {
                     case 0:
                     {
-                        uint16_t ch4 = SEN_094->value();
+                        uint16_t  ch4 = computePPM(SEN_094->value());
                         encoder_uint16(ch4, donnees, index);
                         break;
                     }
@@ -191,7 +221,7 @@ void loop()
                     }
                     case 2:
                     {
-                        uint16_t co = MQ7->value();
+                        uint16_t  co = computePPM(MQ7->value());
                         encoder_uint16(co, donnees, index);
                         break;
                     }
