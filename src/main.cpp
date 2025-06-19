@@ -50,8 +50,8 @@ Remarques :
   de la trame auront 0xFF comme valeur
 - La pression est exprimée en kilopascals (kPa),
 - Les données transmises sont envoyées en tant que "uint8_t" :
-  Exemple : le méthane est mesuré à 300 ppm  
-  Valeur en hexadécimal : 0x012C  
+  Exemple : le méthane est mesuré à 300 ppm
+  Valeur en hexadécimal : 0x012C
   Encodée sur deux octets :
      - Octet LSB (basse valeur) : 0x2C (44 en décimal)
      - Octet MSB (haute valeur) : 0x01 (1 en décimal)
@@ -77,7 +77,6 @@ Remarques :
 #define m -0.318
 #define b 1.133
 #define R0 5.5
-
 
 /*
  * Fonction : encoder_float_entier
@@ -117,18 +116,18 @@ void encoder_uint16(uint16_t valeur, uint8_t *memoire, size_t &index)
  */
 uint16_t computePPM(float sensorValue)
 {
-  float voltage = sensorValue * (5.0 / 1023.0);
-  float RS_gas = ((5.0 * 1.0) / voltage) - 1.0;
-  float ratio = RS_gas / R0;
-  float ppm_log = (log10(ratio) - b) / m;
-  float ppm = pow(10, ppm_log);
+    float voltage = sensorValue * (5.0 / 1023.0);
+    float RS_gas = ((5.0 * 1.0) / voltage) - 1.0;
+    float ratio = RS_gas / R0;
+    float ppm_log = (log10(ratio) - b) / m;
+    float ppm = pow(10, ppm_log);
 
-  if (ppm < 0.0)
-    return 0;
-  if (ppm > 65535.0)
-    return 65535;
+    if (ppm < 0.0)
+        return 0;
+    if (ppm > 65535.0)
+        return 65535;
 
-  return static_cast<uint16_t>(ppm + 0.5);
+    return static_cast<uint16_t>(ppm + 0.5);
 }
 
 // Initialisation du bus I2C avec des broches spécifiques
@@ -152,6 +151,7 @@ static CAN_message_t CAN_TX_msg;
 void setup()
 {
     pinMode(LED_PIN, OUTPUT); // LED pour le statut système
+    digitalWrite(LED_PIN,LOW);
 
     // Initialisation du CAN à 500 kbps
     Can.begin();
@@ -169,6 +169,7 @@ void setup()
         }
     }
 
+
     // Démarrage du capteur BME280 (pression/température/humidité)
     BME280_Sensor.setI2CAddress(0x77);
     if (BME280_Sensor.beginI2C(myWire) == false)
@@ -179,11 +180,14 @@ void setup()
         }
     }
 
+
     // Ajustement de l’échelle de mesure des capteurs analogiques
     MQ7->minScale = 0;
     MQ7->maxScale = 4095;
     SEN_094->minScale = 0;
     SEN_094->maxScale = 4095;
+
+
 }
 
 void loop()
@@ -209,7 +213,7 @@ void loop()
                     {
                     case 0:
                     {
-                        uint16_t  ch4 = computePPM(SEN_094->value());
+                        uint16_t ch4 = computePPM(SEN_094->value());
                         encoder_uint16(ch4, donnees, index);
                         break;
                     }
@@ -221,7 +225,7 @@ void loop()
                     }
                     case 2:
                     {
-                        uint16_t  co = computePPM(MQ7->value());
+                        uint16_t co = computePPM(MQ7->value());
                         encoder_uint16(co, donnees, index);
                         break;
                     }
